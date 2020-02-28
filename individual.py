@@ -10,7 +10,13 @@ class INDIVIDUAL:
 
       def __init__(self, i):
         self.ID = i
-        self.genome = np.random.random((14, 8)) * 2 - 1
+
+        self.genomeh = np.random.random((14, 14)) * 2 - 1
+
+        self.genomeop = np.random.random((14, 8)) * 2 - 1
+
+
+        # print self.genome
           # print(self.genome)
         self.fitness = 0
        
@@ -32,7 +38,7 @@ class INDIVIDUAL:
         # eval_time = int(seconds/dt)
         # self.sim = pyrosim.Simulator(xyz=[50,60,0], use_textures=True, eval_time= eval_time, dt = dt ,play_paused=False, play_blind=pb)
         seconds = 120.0
-        dt = 0.05
+        dt = 0.2
         eval_time = int(seconds/dt)
         # print(eval_time)
         gravity = -1.0
@@ -44,7 +50,8 @@ class INDIVIDUAL:
                                    use_textures=True,
                                    capture=False,
                                    dt=dt)
-        self.snakeservo= ROBOT(self.sim, self.genome)
+
+        self.snakeservo= ROBOT(self.sim, self.genomeh, self.genomeop)
         self.sim.start()
        
       def Compute_Fitness(self):
@@ -53,10 +60,13 @@ class INDIVIDUAL:
         # print(sensorData)
         x1 = self.sim.get_sensor_data( sensor_id =  self.snakeservo.Pos1, svi = 0 )
         y1 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Pos1 , svi = 1 )
-        z1 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Pos1 , svi = 2 )
         x2 = self.sim.get_sensor_data( sensor_id =  self.snakeservo.Pos2, svi = 0 )
         y2 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Pos2 , svi = 1 )
-        z2 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Pos2 , svi = 2 )        
+        xc0 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Poscyl[0] , svi = 1 )
+        xc1 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Poscyl[1] , svi = 1 )
+        xc2 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Poscyl[2] , svi = 1 )
+        xc3 = self.sim.get_sensor_data( sensor_id = self.snakeservo.Poscyl[3] , svi = 1 )
+
         # prop_sensor_results = self.sim.get_sensor_data(self.robot.Px[2])
         # print(prop_sensor_results)
         # self.fitness = x[-1]
@@ -64,17 +74,25 @@ class INDIVIDUAL:
         # self.fitness = ( (1000-x1[-1]) + (1000-x2[-1] ) )/ 2
         # self.fitness = (x1[-1]+x2[-1])/2
         # print x1[-1], x2[-1]
-        self.fitness = x1[-1]
+
+        self.fitness = (xc0[-1] + (xc1[-1]-xc1[0]) + (xc2[-1]-xc2[0]) + (xc3[-1]-xc3[0]))   / 4
+
 
 
         del self.sim
 
       def Mutate(self):
         for j in range (0, 13):
+          for i in range (0, 13):
+            mutgen = random.randint(0, 1000)
+            if mutgen < 130 :
+              self.genomeh[j][i] = random.gauss( self.genomeh[j][i] , math.fabs(self.genomeh[j][i]))
+
+        for j in range (0, 13):
           for i in range (0, 7):
             mutgen = random.randint(0, 1000)
-            if mutgen < 20 :
-              self.genome[j][i] = random.gauss( self.genome[j][i] , math.fabs(self.genome[j][i]))
+            if mutgen < 130 :
+              self.genomeop[j][i] = random.gauss( self.genomeop[j][i] , math.fabs(self.genomeop[j][i]))          
 
           # generomutate = random.randint(0, 7)
           # self.genome[0][generomutate] = random.gauss( self.genome[0][generomutate] , math.fabs(self.genome[0][generomutate]))
@@ -92,16 +110,32 @@ class INDIVIDUAL:
         print("]"),
         # print i, gen
         fitvector[gen][i] = self.fitness
-        genoma = np.array(self.genome)
         # print genoma
-
+        # best = [[0] for f in range (gen)]
+        # print max(fitvector)
+        
         # genomevector[gen][i] = genoma
         # print genomevector
 
+    
+
         if  g == gen+1 and i==popsize-1:
 
-          # for x in range (0, gen+1):
-          #   print fitprom
+          # E N C O N T R A R   MEJOR INDIVIDUO
+          best = 0
+          self.gbest = 0
+          self.ibest = 0
+          for g in range (0, gen+1):
+            for i in range (0, popsize):
+              fitness = fitvector[g][i]
+              if fitness > best :
+                best = fitness
+                self.gbest = g
+                self.ibest = i
+
+
+            
+
           # P R O M E D I O    FITNESS X GENERACION
           for x in range (0, gen+1):   
           #   print fitprom
@@ -114,7 +148,7 @@ class INDIVIDUAL:
             with open (name, mode='w') as csv_file:
               fieldnames = ['gen', 'ind', 'genome', 'fitness']
               writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-
+# falta guardar genoma
               writer.writeheader()
               for i in range (0, popsize):
                 writer.writerow({'gen': x, 'ind': i, 'genome': 0, 'fitness': fitvector[x][i]})
@@ -128,21 +162,22 @@ class INDIVIDUAL:
       def PrintBest(self):
         # print(self.genome)
         # print(self.fitness),
-        print(self.genome)
+        print(self.genomeh),
+        print(self.genomeop),
         print ("["),
         print( self.ID),
         print(self.fitness),
         print("]"),
         f= open("bestind.txt", "a")
-        np.savetxt("bestind.txt", self.genome )
+        np.savetxt("bestind.txt", self.genomeh, self.genomeop )
         f.close()
 
         with open ('Best.csv', mode='w') as csv_file:
-          fieldnames = ['genome', 'fitness']
+          fieldnames = ['genomeh', 'genomeop', 'fitness']
           writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
           writer.writeheader()
-          writer.writerow({'genome': self.genome, 'fitness': self.fitness})
+          writer.writerow({'genome': self.genomeh, 'genomeop': self.genomeop, 'fitness': self.fitness})
         
 
 

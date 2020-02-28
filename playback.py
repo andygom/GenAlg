@@ -13,5 +13,4 @@ f = open("robot.p","r")
 best = pickle.load(f)
 f.close()
 
-best.PrintBest()
 best.Start_Evaluation(False)

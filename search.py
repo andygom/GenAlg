@@ -9,12 +9,12 @@ import pickle
 from individual import INDIVIDUAL
 from population import POPULATION
 
-popsize = 101
-gen = 500
+popsize = 2
+gen = 2
+
 
 fitvector = [ [0 for c in range(popsize)] for f in range (gen)]
 fitprom = [ [0] for f in range (gen)]
-
 
 parents = POPULATION(popsize, 0, fitvector, fitprom, gen)
 parents.Initialize()
@@ -29,13 +29,8 @@ for g in range(1, gen):
     print(g),
     children.Print()
     parents.p = children.p
-#     children = copy.deepcopy(parents)
-#     children.Mutate()
-#     children.Evaluate(True)
-#     parents.ReplaceWith(children)
-#     print(g),s
-#     parents.Print()
 
+    
 f= open('robot.p', 'w')
 pickle.dump (parents.p[0], f)
 f.close()
